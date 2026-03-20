@@ -3,7 +3,8 @@ The Heritage Gas Agency web application is a specialized ERP (Enterprise Resourc
 
 {u can use my Admin Acc.for testing
 email: mohitmajoka123@gmail.com
-password: mohit1234   when u test it }.
+password: mohit1234  
+live-link:  https://heritage-gas-project.web.app }.
 
 2. Tech Stack Architecture
 Frontend: HTML5, CSS3 (Custom Modular UI), JavaScript (ES6+ Modules).
@@ -89,4 +90,5 @@ add live maps tracking order ui.
 
 <img width="885" height="541" alt="6" src="https://github.com/user-attachments/assets/1c4d63f6-b211-476f-a091-0e74bbc46753" />
 
+<img width="704" height="565" alt="7" src="https://github.com/user-attachments/assets/89612bb1-f6c0-4fa2-9dbf-8d3296edebf4" />
 
