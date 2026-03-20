@@ -67,5 +67,21 @@ Right-click index.html (or login.html).
 
 Select "Open with Live Server".
 
-Note: Do not just double-click the file in your folder; Firebase Auth requires a http:// protocol to function correctly.
+Note: Do not just double-click the file in your folder; Firebase Auth requires a 
+http:// protocol to function correctly.
+
+<img width="958" height="545" alt="1" src="https://github.com/user-attachments/assets/1718833a-5fef-4735-87da-5b1c8f07c7cb" />
+
+<img width="872" height="584" alt="2" src="https://github.com/user-attachments/assets/0ed3fd49-dca8-4e1c-a305-b617b966ef11" />
+
+<img width="874" height="397" alt="3" src="https://github.com/user-attachments/assets/0b05742e-aeb4-41db-aa2c-29a4fd02f5ea" />
+
+<img width="812" height="551" alt="4" src="https://github.com/user-attachments/assets/ea8c1cf4-6f5a-43ee-99d5-e19a94e162a7" />
+
+
+<img width="883" height="617" alt="5" src="https://github.com/user-attachments/assets/1399a755-931f-47ed-be65-bb660291cba8" />
+
+
+<img width="885" height="541" alt="6" src="https://github.com/user-attachments/assets/1c4d63f6-b211-476f-a091-0e74bbc46753" />
+
 
