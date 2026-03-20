@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Registration - Heritage Gas</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js",
+          "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+        }
+      }
+    </script>
+</head>
+<body>
+    <div id="navbar"></div>
+    <div class="wrap">
+        <div class="card" style="max-width: 400px; margin: 50px auto; border-top: 5px solid #dc3545;">
+            <h2 style="text-align: center; color: #dc3545;">Admin Signup</h2>
+            <form id="admin-reg-form">
+                <input type="text" id="admin-name" placeholder="Full Name" required />
+                <input type="email" id="admin-email" placeholder="Email Address" required />
+                <input type="password" id="admin-pass" placeholder="Password" required />
+                <hr>
+                <label style="font-size: 12px; color: #666;">Secret Admin Key</label>
+                <input type="password" id="admin-secret" placeholder="Enter Key" required />
+                
+                <button type="submit" class="btn" style="width: 100%; background: #333; margin-top: 10px;">Register Admin</button>
+            </form>
+            <p id="reg-msg" style="text-align: center; margin-top: 15px; font-weight: bold;"></p>
+            <div style="text-align:center; margin-top:10px;">
+                <a href="login.html" class="muted">Back to Login</a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "firebase/app";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+        import { getFirestore, doc, setDoc } from "firebase/firestore";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyANcedC5OX5G05nEQoiyrLWW-yHJrH4oAo",
+            authDomain: "heritage-gas-project.firebaseapp.com",
+            projectId: "heritage-gas-project",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // THE KEY (Case Sensitive)
+        const EXPECTED_KEY = "HERITAGE2026"; 
+
+        document.getElementById('admin-reg-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('reg-msg');
+            const secretInput = document.getElementById('admin-secret').value.trim();
+
+            // 1. Check Key Locally
+            if (secretInput !== EXPECTED_KEY) {
+                msg.innerText = "❌ Invalid Secret Key! Try: HERITAGE2026";
+                msg.style.color = "red";
+                return;
+            }
+
+            const email = document.getElementById('admin-email').value;
+            const pass = document.getElementById('admin-pass').value;
+            const name = document.getElementById('admin-name').value;
+
+            try {
+                msg.innerText = "Processing...";
+                msg.style.color = "orange";
+
+                const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+                await updateProfile(userCred.user, { displayName: name });
+                
+                // 2. Save Admin data to Firestore
+                await setDoc(doc(db, "users", userCred.user.uid), {
+                    name: name,
+                    email: email,
+                    role: "admin",
+                    secretKey: EXPECTED_KEY // Crucial for Firebase Rules
+                });
+
+                msg.innerText = "✅ Success! Redirecting to Dashboard...";
+                msg.style.color = "green";
+                setTimeout(() => window.location.href = "admin.html", 2000);
+            } catch (err) {
+                msg.innerText = "❌ Error: " + err.message;
+                msg.style.color = "red";
+            }
+        });
+
+        fetch("navbar.html").then(res => res.text()).then(data => {
+            document.getElementById("navbar").innerHTML = data;
+        });
+    </script>
+</body>
+</html>

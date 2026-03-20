@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register - Heritage Gas Agency</title>
+    <link rel="stylesheet" href="css/style.css" />
+
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
+        }
+      }
+    </script>
+</head>
+<body>
+    <div id="navbar"></div>
+
+    <div class="wrap">
+        <div class="card">
+            <h2>Create Account</h2>
+            <form id="reg-form">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input id="reg-name" type="text" placeholder="Enter your name" required />
+                </div>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input id="reg-email" type="email" placeholder="example@mail.com" required />
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input id="reg-pass" type="password" placeholder="Min 6 characters" required />
+                </div>
+                <button type="submit" id="reg-btn">Register Now</button>
+            </form>
+            <p class="muted">
+                Already have an account? <a href="login.html">Login here</a>
+            </p>
+            <div id="reg-msg" class="msg" style="padding: 10px; margin-top: 10px; border-radius: 5px; text-align: center;"></div>
+        </div>
+    </div>
+
+    <script>
+        fetch("navbar.html")
+            .then((res) => res.text())
+            .then((data) => {
+                document.getElementById("navbar").innerHTML = data;
+            });
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "firebase/app";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyANcedC5OX5G05nEQoiyrLWW-yHJrH4oAo",
+            authDomain: "heritage-gas-project.firebaseapp.com",
+            projectId: "heritage-gas-project",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const regForm = document.getElementById('reg-form');
+        const msgDiv = document.getElementById('reg-msg');
+        const regBtn = document.getElementById('reg-btn');
+
+        regForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // UI Feedback
+            regBtn.innerText = "Processing...";
+            regBtn.disabled = true;
+
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
+
+            try {
+                // 1. Create User
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                
+                // 2. Add Name to Profile
+                await updateProfile(userCredential.user, {
+                    displayName: name
+                });
+
+                // 3. Success UI
+                msgDiv.innerText = "Account created! Opening your dashboard...";
+                msgDiv.style.backgroundColor = "#d4edda";
+                msgDiv.style.color = "#155724";
+
+                // 4. Final Redirect to Dashboard
+                setTimeout(() => {
+                    window.location.href = "index.html";
+                }, 1500);
+
+            } catch (error) {
+                // Handle Errors
+                regBtn.innerText = "Register Now";
+                regBtn.disabled = false;
+                msgDiv.innerText = error.message;
+                msgDiv.style.backgroundColor = "#f8d7da";
+                msgDiv.style.color = "#721c24";
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Book Cylinder - Heritage Gas</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js",
+          "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+        }
+      }
+    </script>
+</head>
+
+<body>
+    <div id="navbar"></div>
+
+    <div class="wrap">
+      <header class="hero">
+        <h1>Book Your Cylinder</h1>
+        <p id="quota-status" style="font-weight: bold; color: var(--accent);">Checking your remaining quota...</p>
+      </header>
+
+      <main class="card">
+        <form id="booking-form">
+          <label>Quantity (Barrels)</label>
+          <input id="qty" type="number" min="1" max="5" value="1" required />
+          
+          <label>Delivery Address</label>
+          <textarea id="addr" placeholder="Enter full delivery address..." required></textarea>
+
+          <h3>Payment Method</h3>
+          <div class="payment-options" style="display: flex; gap: 20px; margin-bottom: 15px;">
+            <label>
+              <input type="radio" name="payment" value="Cash on Delivery" checked /> Cash on Delivery
+            </label>
+            <label>
+              <input type="radio" name="payment" value="Paytm QR" /> Online (QR Scan)
+            </label>
+          </div>
+
+          <div id="qr-section" style="display: none; text-align: center; padding: 15px; background: #f8fafc; border-radius: 8px; margin-bottom: 15px;">
+            <p class="muted" style="font-size: 13px;">Scan to pay via Paytm/UPI</p>
+            <img src="img/paytm-qr.png" alt="Payment QR" style="width: 150px; border: 1px solid #ddd;" />
+          </div>
+
+          <button type="submit" id="submit-btn" style="width: 100%;">Confirm Booking</button>
+        </form>
+        <div id="book-msg" style="margin-top:15px; text-align: center;"></div>
+      </main>
+
+      <footer style="text-align: center; margin-top: 20px;">
+          <a href="index.html" class="muted">← Back to Dashboard</a>
+      </footer>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "firebase/app";
+        import { getAuth, onAuthStateChanged } from "firebase/auth";
+        import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp } from "firebase/firestore";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyANcedC5OX5G05nEQoiyrLWW-yHJrH4oAo",
+            authDomain: "heritage-gas-project.firebaseapp.com",
+            projectId: "heritage-gas-project",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const bookingForm = document.getElementById('booking-form');
+        const qrSection = document.getElementById('qr-section');
+        const msgDiv = document.getElementById('book-msg');
+        const quotaText = document.getElementById('quota-status');
+        
+        let currentUser = null;
+        const ANNUAL_LIMIT = 12;
+
+        // 1. Check Auth & Load Quota
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                checkUserQuota(user.uid);
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+
+        async function checkUserQuota(uid) {
+            const q = query(collection(db, "bookings"), where("userId", "==", uid));
+            const snap = await getDocs(q);
+            const used = snap.size;
+            const remaining = ANNUAL_LIMIT - used;
+
+            quotaText.innerText = `Yearly Quota: ${remaining} Barrels Remaining`;
+            if (remaining <= 0) {
+                quotaText.style.color = "red";
+                document.getElementById('submit-btn').disabled = true;
+                document.getElementById('submit-btn').innerText = "Quota Exhausted";
+            }
+        }
+
+        // 2. Handle Payment Toggle
+        bookingForm.addEventListener('change', (e) => {
+            if (e.target.name === 'payment') {
+                qrSection.style.display = (e.target.value === 'Paytm QR') ? 'block' : 'none';
+            }
+        });
+
+        // 3. Handle Submission
+        bookingForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+
+            const qty = Number(document.getElementById('qty').value);
+            const address = document.getElementById('addr').value;
+            const payment = document.querySelector('input[name="payment"]:checked').value;
+
+            try {
+                // Final Quota Check before writing
+                const q = query(collection(db, "bookings"), where("userId", "==", currentUser.uid));
+                const snap = await getDocs(q);
+                
+                if (snap.size + qty > ANNUAL_LIMIT) {
+                    throw new Error(`Booking exceeds your remaining quota of ${ANNUAL_LIMIT - snap.size} barrels.`);
+                }
+
+                await addDoc(collection(db, "bookings"), {
+                    userId: currentUser.uid,
+                    userName: currentUser.displayName || "Customer",
+                    userEmail: currentUser.email,
+                    quantity: qty,
+                    address: address,
+                    paymentMethod: payment,
+                    status: "Pending",
+                    timestamp: serverTimestamp()
+                });
+
+                msgDiv.innerHTML = "<b style='color:green;'>Order Placed! Redirecting...</b>";
+                setTimeout(() => window.location.href = "history.html", 2000);
+
+            } catch (error) {
+                msgDiv.innerHTML = `<b style='color:red;'>${error.message}</b>`;
+                btn.disabled = false;
+                btn.innerText = "Confirm Booking";
+            }
+        });
+
+        // Load Navbar
+        fetch("navbar.html").then(res => res.text()).then(data => {
+            document.getElementById("navbar").innerHTML = data;
+        });
+    </script>
+</body>
+</html>

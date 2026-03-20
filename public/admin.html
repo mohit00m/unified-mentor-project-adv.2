@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Heritage Gas</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js",
+          "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+        }
+      }
+    </script>
+</head>
+<body style="display:none;" id="admin-body"> 
+    <div id="navbar"></div>
+
+    <div class="wrap">
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Agency Dashboard</h1>
+            <button id="logout-btn" style="background:#64748b; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Logout</button>
+        </header>
+
+        <div class="card" style="border-left: 5px solid #3b82f6; margin-bottom: 25px;">
+            <h3>📢 Broadcast Agency Notice</h3>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <input type="text" id="notice-input" placeholder="Update all customers..." style="flex: 1;">
+                <button id="post-notice-btn" style="background: #3b82f6; color: white; border: none; padding: 10px; border-radius: 5px;">Post</button>
+                <button id="clear-notice-btn" style="background: #ef4444; color: white; border: none; padding: 10px; border-radius: 5px;">Clear</button>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 25px;">
+            <h3>📦 Inventory Management</h3>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 15px; border-radius: 10px;">
+                <div>
+                    <p class="muted" style="margin:0;">Current Stock</p>
+                    <h2 id="stock-count" style="margin:0; color: #dc3545;">0</h2>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="new-stock-input" placeholder="Set Total Barrels" style="width: 140px;">
+                    <button id="update-stock-btn" class="btn">Update Stock</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🛒 Pending Requests</h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #eee;">
+                            <th style="padding: 10px;">Customer</th>
+                            <th style="padding: 10px;">Qty</th>
+                            <th style="padding: 10px;">Status</th>
+                            <th style="padding: 10px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-booking-list"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "firebase/app";
+        import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+        import { getFirestore, doc, getDoc, collection, onSnapshot, updateDoc, setDoc, query, orderBy, limit } from "firebase/firestore";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyANcedC5OX5G05nEQoiyrLWW-yHJrH4oAo",
+            authDomain: "heritage-gas-project.firebaseapp.com",
+            projectId: "heritage-gas-project",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- MASTER SECURITY CHECK ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // 1. Email Bypass Check
+                if (user.email === "mohitmajoka123@gmail.com") {
+                    document.getElementById('admin-body').style.display = "block";
+                    loadDashboardData();
+                    return; 
+                }
+
+                // 2. Database Role Check
+                try {
+                    const userSnap = await getDoc(doc(db, "users", user.uid));
+                    if (userSnap.exists() && userSnap.data().role === "admin") {
+                        document.getElementById('admin-body').style.display = "block";
+                        loadDashboardData();
+                    } else {
+                        alert("Access Denied: Admin rights required.");
+                        window.location.href = "index.html"; 
+                    }
+                } catch (e) {
+                    console.error("Auth Error", e);
+                    window.location.href = "login.html";
+                }
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+
+        function loadDashboardData() {
+            // Live Inventory
+            onSnapshot(doc(db, "agency", "inventory"), (d) => {
+                if(d.exists()) document.getElementById('stock-count').innerText = d.data().count;
+            });
+
+            // Live Bookings
+            onSnapshot(query(collection(db, "bookings"), orderBy("timestamp", "desc"), limit(20)), (snap) => {
+                const list = document.getElementById('admin-booking-list');
+                list.innerHTML = "";
+                snap.forEach(d => {
+                    const data = d.data();
+                    list.innerHTML += `
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 10px;">${data.userName || 'Customer'}<br><small style="color:gray">${data.userEmail}</small></td>
+                            <td style="padding: 10px;">${data.quantity}</td>
+                            <td style="padding: 10px;"><span class="status-${data.status.toLowerCase()}">${data.status}</span></td>
+                            <td style="padding: 10px;">
+                                ${data.status === 'Pending' ? `
+                                    <button onclick="approveBooking('${d.id}')" style="background:green; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">Approve</button>
+                                    <button onclick="rejectBooking('${d.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">Reject</button>
+                                ` : '—'}
+                            </td>
+                        </tr>`;
+                });
+            });
+        }
+
+        // --- ACTIONS ---
+        window.approveBooking = async (id) => {
+            const sRef = doc(db, "agency", "inventory");
+            const sSnap = await getDoc(sRef);
+            if (sSnap.exists()) {
+                await updateDoc(sRef, { count: sSnap.data().count - 1 });
+            }
+            await updateDoc(doc(db, "bookings", id), { status: "Delivered" });
+        };
+
+        window.rejectBooking = async (id) => {
+            const reason = prompt("Reason for rejection:");
+            if (reason) {
+                await updateDoc(doc(db, "bookings", id), { status: "Rejected", adminNote: reason });
+            }
+        };
+
+        document.getElementById('update-stock-btn').addEventListener('click', async () => {
+            const val = document.getElementById('new-stock-input').value;
+            if(val) await setDoc(doc(db, "agency", "inventory"), { count: parseInt(val) });
+        });
+
+        document.getElementById('post-notice-btn').addEventListener('click', async () => {
+            const msg = document.getElementById('notice-input').value;
+            if(msg) await setDoc(doc(db, "agency", "alerts"), { message: msg, active: true });
+        });
+
+        document.getElementById('clear-notice-btn').addEventListener('click', async () => {
+            await setDoc(doc(db, "agency", "alerts"), { active: false, message: "" });
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth).then(() => window.location.href="login.html"));
+
+        fetch("navbar.html").then(res => res.text()).then(data => document.getElementById("navbar").innerHTML = data);
+    </script>
+</body>
+</html>

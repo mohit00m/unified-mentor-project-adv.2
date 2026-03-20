@@ -1,0 +1,30 @@
+<nav style="background: #333; color: white; padding: 10px; display: flex; justify-content: space-around;">
+    <a href="index.html" style="color: white; text-decoration: none;">Home</a>
+    <a href="booking.html" style="color: white; text-decoration: none;">Book</a>
+    <a href="history.html" style="color: white; text-decoration: none;">History</a>
+    <a href="admin.html" id="nav-admin-link" style="color: #ff4d4d; text-decoration: none; display: none;">Admin Panel</a>
+    <a href="login.html" style="color: white; text-decoration: none;">Account</a>
+</nav>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    // Same config as index.html
+    const firebaseConfig = {
+        apiKey: "AIzaSyANcedC5OX5G05nEQoiyrLWW-yHJrH4oAo",
+        authDomain: "heritage-gas-project.firebaseapp.com",
+        projectId: "heritage-gas-project",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const ADMIN_EMAIL = "mohitmajoka2@gmail.com";
+
+    onAuthStateChanged(auth, (user) => {
+        const adminLink = document.getElementById('nav-admin-link');
+        if (user && user.email === ADMIN_EMAIL) {
+            adminLink.style.display = 'inline'; // Show only to you
+        }
+    });
+</script>

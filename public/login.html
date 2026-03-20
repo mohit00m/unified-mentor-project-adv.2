@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account - Heritage Gas</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
+        }
+      }
+    </script>
+</head>
+<body>
+    <div id="navbar"></div>
+
+    <div class="wrap">
+        <div class="logo-container" style="text-align: center; margin-bottom: 30px;">
+            <div class="logo-icon" style="background: var(--accent); width: 65px; height: 65px; border-radius: 14px; margin: 0 auto; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 26px; box-shadow: 0 6px 20px rgba(170, 25, 25, 0.3);">
+                HG
+            </div>
+            <h2 style="margin-top: 12px; color: var(--accent); letter-spacing: 1.5px; font-weight: 800;">HERITAGE GAS</h2>
+        </div>
+
+        <div id="profile-view" class="card" style="display: none; text-align: center; max-width: 420px; margin: 0 auto; animation: slideUp 0.5s ease-out;">
+            <div id="user-avatar" style="width: 85px; height: 85px; background: #f1f5f9; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 34px; color: var(--accent); border: 3px solid white; box-shadow: var(--shadow);">
+                ?
+            </div>
+            <h2 id="display-name" style="margin: 0; color: var(--text);">User Name</h2>
+            <p id="display-email" class="muted" style="margin-bottom: 15px;">email@example.com</p>
+            
+            <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 25px;">
+                <span style="background: #ecfdf5; color: #047857; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; border: 1px solid #d1fae5;">VERIFIED</span>
+                <span style="background: #eff6ff; color: #1d4ed8; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; border: 1px solid #dbeafe;">ACTIVE</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <a href="history.html" class="btn btn-user" style="width: 100%;">View My Bookings</a>
+                
+                <div style="margin: 10px 0; padding-top: 20px; border-top: 1px solid var(--border);">
+                    <p class="muted" style="font-size: 12px; margin-bottom: 12px;">Having trouble? We're here to help.</p>
+                    <a href="complaint.html" class="btn" style="background: #ffffff; color: var(--text); width: 100%; border: 1.5px solid var(--border); box-shadow: none;">Contact Support</a>
+                </div>
+
+                <button id="logout-btn" style="background: #64748b; width: 100%; margin-top: 5px;">Sign Out</button>
+            </div>
+        </div>
+
+        <div id="login-view" class="card" style="display: none; max-width: 400px; margin: 0 auto;">
+            <h2 id="login-header" style="text-align: center; margin-bottom: 25px; color: var(--text);">Sign In</h2>
+            <form id="login-form">
+                <div class="input-group">
+                    <input id="login-email" type="email" placeholder="Email Address" required />
+                </div>
+                <div class="input-group">
+                    <input id="login-pass" type="password" placeholder="Password" required />
+                </div>
+                <button type="submit" id="login-submit-btn" style="width: 100%; margin-top: 10px;">Sign In</button>
+            </form>
+            <p id="reg-footer" class="muted" style="text-align: center; margin-top: 20px;">
+                New to Heritage Gas? <a href="register.html" style="color: var(--accent); font-weight: 600;">Create account</a>
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "firebase/app";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyANcedC5OX5G05nEQoiyrLWW-yHJrH4oAo",
+            authDomain: "heritage-gas-project.firebaseapp.com",
+            projectId: "heritage-gas-project",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const profileView = document.getElementById('profile-view');
+        const loginView = document.getElementById('login-view');
+        const params = new URLSearchParams(window.location.search);
+        const isAdminMode = params.get('type') === 'admin';
+        const ADMIN_EMAIL = "mohitmajoka2@gmail.com";
+
+        // Listen for Login State
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginView.style.display = 'none';
+                profileView.style.display = 'block';
+                
+                document.getElementById('display-name').innerText = user.displayName || "Valued Customer";
+                document.getElementById('display-email').innerText = user.email;
+                document.getElementById('user-avatar').innerText = (user.displayName || user.email).charAt(0).toUpperCase();
+            } else {
+                profileView.style.display = 'none';
+                loginView.style.display = 'block';
+
+                if (isAdminMode) {
+                    document.getElementById('login-header').innerText = "Agency Admin Login";
+                    document.getElementById('login-submit-btn').style.background = "var(--admin-red)";
+                    document.getElementById('reg-footer').style.display = "none";
+                }
+            }
+        });
+
+        // Handle Login
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+
+            if (isAdminMode && email !== ADMIN_EMAIL) {
+                alert("Access Denied: This portal is restricted to Agency Administrators.");
+                return;
+            }
+
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                window.location.href = "index.html";
+            } catch (err) {
+                alert("Authentication Failed: " + err.message);
+            }
+        });
+
+        // Handle Logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            if (confirm("Are you sure you want to sign out of your account?")) {
+                signOut(auth).then(() => {
+                    window.location.href = "index.html";
+                });
+            }
+        });
+
+        // Load Navbar
+        fetch("navbar.html").then(res => res.text()).then(data => {
+            document.getElementById("navbar").innerHTML = data;
+        });
+    </script>
+</body>
+</html>

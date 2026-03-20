@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Support - Heritage Gas</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+          "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
+        }
+      }
+    </script>
+</head>
+<body>
+    <div id="navbar"></div>
+    <div class="wrap">
+        <div class="card" style="max-width: 500px; margin: 0 auto;">
+            <h2 style="color: var(--accent);">Raise a Complaint</h2>
+            <p class="muted">Tell us what's wrong, and we'll fix it as soon as possible.</p>
+            
+            <form id="complaint-form">
+                <label>Issue Category</label>
+                <select id="comp-category" required>
+                    <option value="Delivery Delay">Delivery Delay</option>
+                    <option value="Cylinder Leakage">Cylinder Leakage</option>
+                    <option value="Damaged Regulator">Damaged Regulator/Pipe</option>
+                    <option value="Payment Issue">Payment Issue</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label>Message</label>
+                <textarea id="comp-msg" rows="4" placeholder="Describe your issue here..." required></textarea>
+                
+                <button type="submit" style="width: 100%; margin-top: 15px;">Submit Complaint</button>
+            </form>
+            <div id="status-msg" style="margin-top: 15px; text-align: center;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "firebase/app";
+        import { getAuth, onAuthStateChanged } from "firebase/auth";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyANcedC5OX5G05nEQoiyrLWW-yHJrH4oAo",
+            authDomain: "heritage-gas-project.firebaseapp.com",
+            projectId: "heritage-gas-project",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = "login.html";
+            currentUser = user;
+        });
+
+        document.getElementById('complaint-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const status = document.getElementById('status-msg');
+            
+            try {
+                await addDoc(collection(db, "complaints"), {
+                    userId: currentUser.uid,
+                    userName: currentUser.displayName || "Anonymous",
+                    userEmail: currentUser.email,
+                    category: document.getElementById('comp-category').value,
+                    message: document.getElementById('comp-msg').value,
+                    status: "Pending",
+                    timestamp: serverTimestamp()
+                });
+
+                status.innerHTML = "<b style='color:green;'>Complaint submitted successfully!</b>";
+                document.getElementById('complaint-form').reset();
+            } catch (err) {
+                status.innerHTML = "<b style='color:red;'>Error: " + err.message + "</b>";
+            }
+        });
+
+        fetch("navbar.html").then(res => res.text()).then(data => {
+            document.getElementById("navbar").innerHTML = data;
+        });
+    </script>
+</body>
+</html>

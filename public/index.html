@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Home - Heritage Gas Agency</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+          "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js",
+          "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"
+        }
+      }
+    </script>
+</head>
+<body>
+    <div id="navbar"></div>
+    
+    <div class="wrap">
+        <header class="hero">
+            <div class="logo-icon" style="background: var(--accent); width: 50px; height: 50px; border-radius: 10px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px;">HG</div>
+            <h1>Heritage Gas Agency</h1>
+            <p id="welcome-msg">Loading your profile...</p>
+        </header>
+
+        <main class="grid-container">
+            <div class="card" id="user-actions" style="display: none; animation: fadeIn 0.5s;">
+                <h3>User Portal</h3>
+                <div class="btn-group">
+                    <a href="booking.html" class="btn">Book Cylinder</a>
+                    <a href="history.html" class="btn">My Bookings</a>
+                    <a href="complaint.html" class="btn" style="background: #64748b;">Raise Complaint</a>
+                </div>
+            </div>
+
+            <div class="card" id="admin-actions" style="display: none; border: 2px solid var(--admin-red); animation: fadeIn 0.5s;">
+                <h3 style="color: var(--admin-red);">Admin Control Panel</h3>
+                <p class="muted" style="font-size: 13px;">Manage bookings, stock, and customer issues.</p>
+                <div class="btn-group">
+                    <a href="admin.html" class="btn" style="background: var(--admin-red);">Open Admin Dashboard</a>
+                </div>
+            </div>
+
+            <div id="login-section" style="display: none; gap: 20px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
+                <div class="card" style="flex: 1; min-width: 280px; border-top: 5px solid #007bff;">
+                    <h3>Customer Portal</h3>
+                    <p class="muted" style="font-size: 13px; margin-bottom: 15px;">Book refills and track history.</p>
+                    <a href="login.html?type=user" class="btn" style="width: 100%;">Login as User</a>
+                </div>
+                
+                <div class="card" style="flex: 1; min-width: 280px; border-top: 5px solid var(--admin-red);">
+                    <h3>Agency Portal</h3>
+                    <p class="muted" style="font-size: 13px; margin-bottom: 15px;">For staff and administrators.</p>
+                    <a href="login.html?type=admin" class="btn" style="background: #333; width: 100%;">Login as Admin</a>
+                    <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; text-align: center;">
+                        <a href="admin-register.html" style="font-size: 12px; color: var(--admin-red); text-decoration: none; font-weight: 600;">+ Register New Admin Account</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "firebase/app";
+        import { getAuth, onAuthStateChanged } from "firebase/auth";
+        import { getFirestore, doc, getDoc } from "firebase/firestore";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyANcedC5OX5G05nEQoiyrLWW-yHJrH4oAo",
+            authDomain: "heritage-gas-project.firebaseapp.com",
+            projectId: "heritage-gas-project",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // Primary Owner Email
+        const OWNER_EMAIL = "mohitmajoka2@gmail.com";
+
+        onAuthStateChanged(auth, async (user) => {
+            const userBox = document.getElementById('user-actions');
+            const adminBox = document.getElementById('admin-actions');
+            const loginBox = document.getElementById('login-section');
+            const msg = document.getElementById('welcome-msg');
+
+            // Reset visibility
+            userBox.style.display = 'none';
+            adminBox.style.display = 'none';
+            loginBox.style.display = 'none';
+
+            if (user) {
+                msg.innerHTML = `Welcome back, <strong>${user.displayName || 'User'}</strong>`;
+                
+                // 1. Check if they are the hardcoded owner
+                if (user.email === OWNER_EMAIL) {
+                    adminBox.style.display = 'block';
+                } else {
+                    // 2. Check Firestore for 'admin' role (for those who used admin-register.html)
+                    try {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists() && userDoc.data().role === "admin") {
+                            adminBox.style.display = 'block';
+                        } else {
+                            userBox.style.display = 'block';
+                        }
+                    } catch (e) {
+                        userBox.style.display = 'block';
+                    }
+                }
+            } else {
+                msg.innerText = "Fast & Reliable Cylinder Delivery";
+                loginBox.style.display = 'flex';
+            }
+        });
+
+        // Load Navbar
+        fetch("navbar.html").then(res => res.text()).then(data => {
+            document.getElementById("navbar").innerHTML = data;
+        });
+    </script>
+</body>
+</html>
