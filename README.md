@@ -70,6 +70,11 @@ Select "Open with Live Server".
 Note: Do not just double-click the file in your folder; Firebase Auth requires a 
 http:// protocol to function correctly.
 
+**later updation**
+we can add payment gateway 
+improve the ui more with banners and posters
+add live maps tracking order ui.
+
 <img width="958" height="545" alt="1" src="https://github.com/user-attachments/assets/1718833a-5fef-4735-87da-5b1c8f07c7cb" />
 
 <img width="872" height="584" alt="2" src="https://github.com/user-attachments/assets/0ed3fd49-dca8-4e1c-a305-b617b966ef11" />
