@@ -4,6 +4,7 @@ The Heritage Gas Agency web application is a specialized ERP (Enterprise Resourc
 {u can use my Admin Acc.for testing
 email: mohitmajoka123@gmail.com
 password: mohit1234  
+Secret Admin key If creating new Admin id :HERITAGE2026
 live-link:  https://heritage-gas-project.web.app }.
 
 2. Tech Stack Architecture
